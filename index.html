@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>D&D Money Splitter - By Woodee and ChatGPT v1.1</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    box-sizing: border-box;
+  }
+  label {
+    font-weight: bold;
+    margin-bottom: 6px;
+    display: block;
+    font-size: 16px;
+    text-align: center;
+  }
+  /* Updated form-group for vertical centered label + dropdown */
+  .form-group {
+    margin-bottom: 15px;
+    display: flex;
+    flex-direction: column; /* vertical stack */
+    align-items: center;    /* center horizontally */
+  }
+  #moneyInputs {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    margin-bottom: 20px;
+  }
+  .currency-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .currency-controls {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .increment-btn {
+    width: 45px;
+    height: 32px;
+    font-weight: bold;
+    font-size: 14px;
+    cursor: pointer;
+    border-radius: 4px;
+    border: none;
+    user-select: none;
+    text-align: center;
+  }
+  .increment-btn.red {
+    background-color: #f44336;
+    color: white;
+  }
+  .increment-btn.red:disabled {
+    background-color: #ef9a9a;
+    cursor: not-allowed;
+  }
+  .increment-btn.green {
+    background-color: #4caf50;
+    color: white;
+  }
+  .increment-btn.green:disabled {
+    background-color: #a5d6a7;
+    cursor: not-allowed;
+  }
+  .currency-controls input {
+    width: 60px;
+    text-align: center;
+    font-size: 16px;
+    padding: 5px 3px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+    user-select: text;
+  }
+  button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  #submitPartySizeSection {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    justify-content: center; /* center the submit & clear buttons horizontally */
+  }
+  #submitPartySizeBtn {
+    background-color: #2196F3;
+    color: white;
+    border: none;
+    padding: 10px 25px;
+    font-size: 16px;
+    font-weight: bold;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  #submitPartySizeBtn:disabled {
+    background-color: #90caf9;
+    cursor: not-allowed;
+  }
+  #clearPartySizeBtn {
+    background-color: #ccc;
+    border: none;
+    padding: 10px 25px;
+    font-size: 16px;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  #clearPartySizeBtn:hover {
+    background-color: #bbb;
+  }
+  #splitSection {
+    display: flex;
+    justify-content: center; /* center Split Money button */
+    margin-bottom: 20px;
+  }
+  #splitButton {
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    padding: 10px 30px;
+    font-size: 16px;
+    font-weight: bold;
+    border-radius: 4px;
+    cursor: pointer;
+    min-width: 130px;
+  }
+  #splitButton:disabled {
+    background-color: #a5d6a7;
+    cursor: not-allowed;
+  }
+  #resultSection {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  #resultOutput {
+    width: 35ch;           /* ~35 characters wide */
+    resize: none;
+    font-family: monospace;
+    font-size: 14px;
+    box-sizing: border-box;
+    min-height: 80px;
+    max-height: 70vh;
+    overflow-y: hidden;
+    padding: 10px;
+    text-align: center; /* center content horizontally */
+    font-variant-numeric: tabular-nums; /* uniform digit spacing */
+  }
+  #copyResultBtn {
+    margin-top: 10px;
+    padding: 6px 12px;
+    font-size: 14px;
+    cursor: pointer;
+  }
+</style>
+</head>
+<body>
+
+<div class="form-group">
+  <label for="partySizeSelect">Party Size</label>
+  <select id="partySizeSelect">
+    <option value="">Select party size</option>
+    <option value="2">2</option>
+    <option value="3">3</option>
+    <option value="4">4</option>
+    <option value="5">5</option>
+    <option value="6">6</option>
+    <option value="7">7</option>
+    <option value="8">8</option>
+    <option value="9">9</option>
+    <option value="10">10</option>
+  </select>
+</div>
+
+<div id="submitPartySizeSection">
+  <button id="submitPartySizeBtn" disabled>Submit</button>
+  <button id="clearPartySizeBtn" type="button">Clear</button>
+</div>
+
+<div id="moneyInputs" aria-disabled="true" style="opacity: 0.5; pointer-events: none;">
+  <div class="currency-group">
+    <label for="gold" style="color: goldenrod;">Gold</label>
+    <div class="currency-controls">
+      <button type="button" class="increment-btn red" data-currency="gold" data-increment="-100" disabled>100</button>
+      <button type="button" class="increment-btn red" data-currency="gold" data-increment="-10" disabled>10</button>
+      <input type="number" id="gold" value="0" min="0" max="9999" disabled />
+      <button type="button" class="increment-btn green" data-currency="gold" data-increment="10" disabled>10</button>
+      <button type="button" class="increment-btn green" data-currency="gold" data-increment="100" disabled>100</button>
+    </div>
+  </div>
+  <div class="currency-group">
+    <label for="silver" style="color: silver;">Silver</label>
+    <div class="currency-controls">
+      <button type="button" class="increment-btn red" data-currency="silver" data-increment="-100" disabled>100</button>
+      <button type="button" class="increment-btn red" data-currency="silver" data-increment="-10" disabled>10</button>
+      <input type="number" id="silver" value="0" min="0" max="9999" disabled />
+      <button type="button" class="increment-btn green" data-currency="silver" data-increment="10" disabled>10</button>
+      <button type="button" class="increment-btn green" data-currency="silver" data-increment="100" disabled>100</button>
+    </div>
+  </div>
+  <div class="currency-group">
+    <label for="copper" style="color: #b87333;">Copper</label>
+    <div class="currency-controls">
+      <button type="button" class="increment-btn red" data-currency="copper" data-increment="-100" disabled>100</button>
+      <button type="button" class="increment-btn red" data-currency="copper" data-increment="-10" disabled>10</button>
+      <input type="number" id="copper" value="0" min="0" max="9999" disabled />
+      <button type="button" class="increment-btn green" data-currency="copper" data-increment="10" disabled>10</button>
+      <button type="button" class="increment-btn green" data-currency="copper" data-increment="100" disabled>100</button>
+    </div>
+  </div>
+</div>
+
+<div class="form-group">
+  <label for="addWeightingSelect">Weighted mode?</label>
+  <select id="addWeightingSelect" disabled>
+    <option value="false" selected>No</option>
+    <option value="true">Yes</option>
+  </select>
+</div>
+
+<div class="form-group">
+  <label for="weightTargetSelect">Remainder weighted to?</label>
+  <select id="weightTargetSelect" disabled>
+    <option value="">Select person</option>
+  </select>
+</div>
+
+<div id="splitSection">
+  <button id="splitButton" disabled>Split Money</button>
+</div>
+
+<div id="resultSection" style="flex-grow:1; flex-direction: column; align-items: center; display: flex;">
+  <textarea id="resultOutput" readonly></textarea>
+  <button id="copyResultBtn" type="button" disabled>📝 Copy to Clipboard</button>
+</div>
+
+<script>
+  const partySizeSelect = document.getElementById('partySizeSelect');
+  const submitPartySizeBtn = document.getElementById('submitPartySizeBtn');
+  const clearPartySizeBtn = document.getElementById('clearPartySizeBtn');
+  const addWeightingSelect = document.getElementById('addWeightingSelect');
+  const weightTargetSelect = document.getElementById('weightTargetSelect');
+  const splitButton = document.getElementById('splitButton');
+  const moneyInputs = document.getElementById('moneyInputs');
+  const goldInput = document.getElementById('gold');
+  const silverInput = document.getElementById('silver');
+  const copperInput = document.getElementById('copper');
+  const resultOutput = document.getElementById('resultOutput');
+  const copyResultBtn = document.getElementById('copyResultBtn');
+  const incrementButtons = document.querySelectorAll('.increment-btn');
+
+  // Enable or disable -100 and -10 buttons based on current value
+  function updateMinusButtons() {
+    ['gold', 'silver', 'copper'].forEach(currency => {
+      const val = Number(document.getElementById(currency).value) || 0;
+      const btn100 = document.querySelector(`.increment-btn.red[data-currency="${currency}"][data-increment="-100"]`);
+      if (btn100) btn100.disabled = val < 100;
+      const btn10 = document.querySelector(`.increment-btn.red[data-currency="${currency}"][data-increment="-10"]`);
+      if (btn10) btn10.disabled = val < 10;
+    });
+  }
+
+  // Enable or disable Split Money button based on inputs
+  function checkSplitButtonState() {
+    const gold = Number(goldInput.value) || 0;
+    const silver = Number(silverInput.value) || 0;
+    const copper = Number(copperInput.value) || 0;
+    if (gold + silver + copper <= 0) {
+      splitButton.disabled = true;
+      copyResultBtn.disabled = true;
+      return;
+    }
+    if (addWeightingSelect.value === 'true' && !weightTargetSelect.value) {
+      splitButton.disabled = true;
+      copyResultBtn.disabled = true;
+      return;
+    }
+    splitButton.disabled = false;
+  }
+
+  // Resize textarea to fit content height
+  function resizeTextarea() {
+    resultOutput.style.height = 'auto';
+    resultOutput.style.height = resultOutput.scrollHeight + 'px';
+  }
+
+  // Party size selection enables submit button only when valid
+  partySizeSelect.addEventListener('change', () => {
+    const val = Number(partySizeSelect.value);
+    submitPartySizeBtn.disabled = !(val >= 2 && val <= 10);
+  });
+
+  // Submit party size enables money inputs and weighting select
+submitPartySizeBtn.addEventListener('click', () => {
+  // Disable submit button right after clicking to prevent multiple submissions
+  submitPartySizeBtn.disabled = true;
+
+  const partySize = Number(partySizeSelect.value);
+  if (partySize < 2 || partySize > 10) {
+    alert('Please select a valid party size (2-10).');
+    submitPartySizeBtn.disabled = false; // Re-enable if invalid
+    return;
+  }
+
+    [goldInput, silverInput, copperInput].forEach(input => input.disabled = false);
+    incrementButtons.forEach(btn => btn.disabled = false);
+    addWeightingSelect.disabled = false;
+
+    weightTargetSelect.innerHTML = '<option value="">Select person</option>';
+    for (let i = 1; i <= partySize; i++) {
+      const option = document.createElement('option');
+      option.value = i;
+      option.textContent = `Person ${i}`;
+      weightTargetSelect.appendChild(option);
+    }
+    weightTargetSelect.disabled = true;
+
+    splitButton.disabled = true;
+
+    moneyInputs.style.opacity = '1';
+    moneyInputs.style.pointerEvents = 'auto';
+
+    updateMinusButtons();
+  });
+
+  // Clear party size resets everything
+  clearPartySizeBtn.addEventListener('click', () => {
+    partySizeSelect.value = '';
+    submitPartySizeBtn.disabled = true;
+
+    [goldInput, silverInput, copperInput].forEach(input => {
+      input.disabled = true;
+      input.value = '0';
+    });
+    incrementButtons.forEach(btn => btn.disabled = true);
+
+    addWeightingSelect.value = 'false';
+    addWeightingSelect.disabled = true;
+    weightTargetSelect.innerHTML = '<option value="">Select person</option>';
+    weightTargetSelect.disabled = true;
+
+    splitButton.disabled = true;
+
+    resultOutput.value = '';
+    resizeTextarea();
+
+    moneyInputs.style.opacity = '0.5';
+    moneyInputs.style.pointerEvents = 'none';
+
+    copyResultBtn.disabled = true;
+  });
+
+  // Toggle weighting person select enabled/disabled
+  addWeightingSelect.addEventListener('change', () => {
+    if (addWeightingSelect.value === 'true') {
+      weightTargetSelect.disabled = false;
+    } else {
+      weightTargetSelect.disabled = true;
+      weightTargetSelect.value = '';
+    }
+    checkSplitButtonState();
+  });
+
+  // Check split button state on input and change events
+  [goldInput, silverInput, copperInput, addWeightingSelect, weightTargetSelect].forEach(elem => {
+    elem.addEventListener('input', () => {
+      checkSplitButtonState();
+      updateMinusButtons();
+    });
+    elem.addEventListener('change', () => {
+      checkSplitButtonState();
+      updateMinusButtons();
+    });
+  });
+
+  // Increment and decrement buttons update values
+  incrementButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const currency = btn.dataset.currency;
+      const increment = Number(btn.dataset.increment);
+      const input = document.getElementById(currency);
+      let val = Number(input.value) || 0;
+      val += increment;
+      if (val < 0) val = 0;
+      if (val > 9999) val = 9999;
+      input.value = val;
+      checkSplitButtonState();
+      updateMinusButtons();
+    });
+  });
+
+  // Split money calculation and display
+  splitButton.addEventListener('click', () => {
+    const partySize = Number(partySizeSelect.value);
+
+    let gold = Number(goldInput.value) || 0;
+    let silver = Number(silverInput.value) || 0;
+    let copper = Number(copperInput.value) || 0;
+
+    let totalCopper = gold * 100 + silver * 10 + copper;
+    let baseShare = Math.floor(totalCopper / partySize);
+    let remainder = totalCopper % partySize;
+
+    let remainderReceivers = [];
+    if (addWeightingSelect.value === 'true') {
+      let target = Number(weightTargetSelect.value);
+      for (let i = 1; i <= partySize; i++) {
+        remainderReceivers.push(i === target ? 1 : 0);
+      }
+    } else {
+      remainderReceivers = new Array(partySize).fill(0);
+    }
+
+    let results = [];
+    let shares = [];
+    for (let i = 0; i < partySize; i++) {
+      let personTotal = baseShare + (remainderReceivers[i] === 1 ? remainder : 0);
+      let g = Math.floor(personTotal / 100);
+      let s = Math.floor((personTotal % 100) / 10);
+      let c = personTotal % 10;
+      results.push(`Person ${i + 1}: ${g}g ${s}s ${c}c`);
+      shares.push(personTotal);
+    }
+
+    const allEqual = shares.every(share => share === shares[0]);
+
+    let summaryText = '';
+    if (allEqual) {
+      summaryText = '\n\nSplit is equal for all party members.';
+    } else {
+      summaryText = `\n\nRemainder: ${remainder} copper coin${remainder !== 1 ? 's' : ''}.`;
+    }
+
+    resultOutput.value = results.join('\n') + summaryText;
+    resizeTextarea();
+
+    copyResultBtn.disabled = false; // Enable copy button since we have results
+  });
+
+  // Copy result button copies text to clipboard with confirmation
+  copyResultBtn.addEventListener('click', () => {
+    if (!resultOutput.value) return;
+    resultOutput.select();
+    navigator.clipboard.writeText(resultOutput.value)
+      .then(() => {
+        copyResultBtn.textContent = '✅ Copied!';
+        setTimeout(() => {
+          copyResultBtn.textContent = '📝 Copy to Clipboard';
+        }, 2000);
+      })
+      .catch(() => alert('Failed to copy!'));
+  });
+
+  // Initialize form on page load
+  clearPartySizeBtn.click();
+
+</script>
+
+</body>
+</html>
